@@ -3,6 +3,7 @@ package server;
 
 
 import FileData.FileReadWrite;
+import org.apache.log4j.Logger;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -18,6 +19,8 @@ public class ClientHandler {
     private DataOutputStream out;
     private String nickname;
     private String login;
+
+    private static final Logger logger = Logger.getLogger(ClientHandler.class);
 
 
     public ClientHandler(Server server, Socket socket) {
@@ -41,8 +44,10 @@ public class ClientHandler {
                                     String[] token = str.split("\\s",4);
                                     boolean b = server.getAuthService().registration(token[1], token[2], token[3]);
                                     if(b){
+                                        logger.info("Client is registered");
                                         sendMessage("/regOk");
                                     } else {
+                                        logger.info("registration error");
                                         sendMessage("/regNo");
                                     }
                                 }
@@ -56,6 +61,7 @@ public class ClientHandler {
                                             out.writeUTF("/authOk " + nickname);
                                             server.subscribe(this);
                                             socket.setSoTimeout(0);
+                                            logger.info("Client " + nickname + " is logged in");
                                             break;
                                         } else{
                                             out.writeUTF("Учетная запись уже используется");
@@ -102,12 +108,15 @@ public class ClientHandler {
                                 }
                             } else{
                                 server.broadCastMsg(this,str);
+                                logger.info("Client " + nickname + " send message");
                                 try {
                                     FileReadWrite newFile = new FileReadWrite();
                                     newFile.doUserListWriter(newFile.chatUserMessage(nickname), str);
                                     newFile.doChatWriter(newFile.allChatMessage(), str);
                                 } catch (Exception e) {
-                                    throw new RuntimeException("SWW", e);
+                                    RuntimeException ex = new RuntimeException("error writing to file");
+                                    logger.error("Something went wrong in writing to file", ex);
+                                    throw ex;
                                 }
 
                             }
@@ -122,6 +131,7 @@ public class ClientHandler {
                 } finally {
                     System.out.println("Client disconnected!");
                     server.unsubscribe(this);
+                    logger.info("Client " + nickname + " disconnected");
                     try {
                         socket.close();
                     } catch (EOFException e){

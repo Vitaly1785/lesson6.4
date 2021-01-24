@@ -1,6 +1,7 @@
 package server;
 
 import connect.UsersAuthService;
+import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -19,6 +20,8 @@ public class Server {
     private AuthService authService;
     private ExecutorService serverExService;
 
+    private static final Logger logger = Logger.getLogger(Server.class);
+
     public ExecutorService getServerExService() {
         return serverExService;
     }
@@ -30,6 +33,7 @@ public class Server {
         try {
             server = new ServerSocket(PORT);
             System.out.println("server started!");
+            logger.info("Server started");
         while(true){
             socket = server.accept();
             System.out.println("client connected! "+ socket.getRemoteSocketAddress());
@@ -40,6 +44,7 @@ public class Server {
             } finally {
                 System.out.println("Server closed!");
                 serverExService.shutdown();
+                logger.info("Sever closed");
                 try {
                     server.close();
                 } catch (IOException e){
